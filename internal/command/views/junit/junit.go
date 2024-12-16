@@ -3,6 +3,7 @@ package junit
 import (
 	"bytes"
 	"encoding/xml"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -57,7 +58,8 @@ func JUnitXMLTestReport(suite *moduletest.Suite) ([]byte, error) {
 	errorsName := xml.Name{Local: "errors"}
 
 	enc.EncodeToken(xml.StartElement{Name: suitesName})
-	for _, file := range suite.Files {
+	sortedFiles := suiteFilesAsSortedList(suite.Files) // to ensure consistent ordering in XML
+	for _, file := range sortedFiles {
 		// Each test file is modelled as a "test suite".
 
 		// First we'll count the number of tests and number of failures/errors
@@ -154,4 +156,20 @@ func JUnitXMLTestReport(suite *moduletest.Suite) ([]byte, error) {
 	enc.EncodeToken(xml.EndElement{Name: suitesName})
 	enc.Close()
 	return buf.Bytes(), nil
+}
+
+func suiteFilesAsSortedList(files map[string]*moduletest.File) []*moduletest.File {
+	fileNames := make([]string, len(files))
+	i := 0
+	for k := range files {
+		fileNames[i] = k
+		i++
+	}
+	slices.Sort(fileNames)
+
+	sortedFiles := make([]*moduletest.File, len(files))
+	for i, name := range fileNames {
+		sortedFiles[i] = files[name]
+	}
+	return sortedFiles
 }

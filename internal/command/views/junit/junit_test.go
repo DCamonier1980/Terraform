@@ -121,6 +121,51 @@ func Test_JUnitXMLTestReport(t *testing.T) {
 				},
 			},
 		},
+		"multiple test files with various tests": {
+			XmlString: `<?xml version="1.0" encoding="UTF-8"?><testsuites>
+  <testsuite name="test_file_one.tftest.hcl" tests="1" skipped="0" failures="0" errors="0">
+    <testcase name="test_one" classname="test_file_one.tftest.hcl"></testcase>
+  </testsuite>
+  <testsuite name="test_file_two.tftest.hcl" tests="2" skipped="1" failures="1" errors="0">
+    <testcase name="test_two" classname="test_file_two.tftest.hcl">
+      <skipped></skipped>
+    </testcase>
+    <testcase name="test_three" classname="test_file_two.tftest.hcl">
+      <failure message="Test run failed"></failure>
+    </testcase>
+  </testsuite>
+</testsuites>`,
+			Suite: &moduletest.Suite{
+				Status: moduletest.Skip,
+				Files: map[string]*moduletest.File{
+					"test_file_one.tftest.hcl": {
+						Name:   "test_file_one.tftest.hcl",
+						Status: moduletest.Skip,
+						Runs: []*moduletest.Run{
+							{
+								Name:   "test_one",
+								Status: moduletest.Pass,
+							},
+						},
+					},
+					"test_file_two.tftest.hcl": {
+						Name:   "test_file_two.tftest.hcl",
+						Status: moduletest.Skip,
+						Runs: []*moduletest.Run{
+							{
+								Name:   "test_two",
+								Status: moduletest.Skip,
+							},
+							{
+								Name:   "test_three",
+								Status: moduletest.Fail,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
 
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
